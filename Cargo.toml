@@ -1,0 +1,25 @@
+[package]
+name = "clord"
+version = "0.1.0"
+authors = ["Christian Torbidone <killerbossoriginal@outlook.it>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dioxus = { version = "0.7.1", features = ["router", "fullstack"] }
+gloo-timers = { version = "0.4.0", features = ["futures"] }
+qrcode = { version = "0.14.1", default-features = false, features = ["svg"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rand = "0.10.3"
+tokio = { version = "1.53.2", features = ["time", "sync", "rt"] }
+
+[features]
+default = ["web"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]
+server = ["dioxus/server"]
