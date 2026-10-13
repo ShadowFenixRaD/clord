@@ -1,9 +1,19 @@
 use dioxus::prelude::*;
+use shadow_design::alert::{Alert, AlertVariant};
+use shadow_design::button::{Button, ButtonSize, ButtonVariant};
+use shadow_design::icon::{Icon, IconKind};
+use shadow_design::modal::Modal;
+use shadow_design::notification::use_notification;
+use shadow_design::typography::{Code, Text, TextSize};
 
 #[component]
-pub fn EmbedModal(code: String, origin: Option<String>, on_close: EventHandler<()>) -> Element {
+pub fn EmbedModal(
+    code: String,
+    origin: Option<String>,
+    is_open: Signal<bool>,
+) -> Element {
     let mut resolved_origin = use_signal(|| origin.unwrap_or_default());
-    let mut copied = use_signal(|| false);
+    let mut notifications = use_notification();
 
     // If origin is empty, query window.location.origin
     use_effect(move || {
@@ -32,61 +42,61 @@ pub fn EmbedModal(code: String, origin: Option<String>, on_close: EventHandler<(
     let snippet_for_copy = embed_snippet.clone();
 
     rsx! {
-        div {
-            class: "modal-overlay",
-            onclick: move |_| on_close.call(()),
+        Modal {
+            is_open,
+            title: Some("Incorpora come Iframe".to_string()),
+            glow: Some(true),
             div {
-                class: "modal-content",
-                onclick: move |e| e.stop_propagation(),
-                div {
-                    class: "modal-header",
-                    h3 { "Incorpora come Iframe" }
-                    button {
-                        class: "modal-close",
-                        onclick: move |_| on_close.call(()),
-                        "✕"
-                    }
-                }
-                p {
-                    style: "font-size: 0.9rem; color: var(--text-muted);",
+                style: "display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem 0;",
+                Text {
+                    size: TextSize::Sm,
+                    dimmed: true,
                     "Copia questo snippet per includere la nuvola in tempo reale su qualsiasi sito web o dominio esterno (Notion, WordPress, presentazioni, dashboard aziendali)."
                 }
+
                 div {
-                    style: "margin: 0.75rem 0 0.25rem; font-size: 0.8rem; color: #a5b4fc; display: flex; align-items: center; gap: 0.4rem;",
-                    span { "🌐" }
-                    span { "URL Assoluto per domini esterni: " }
-                    code {
-                        style: "background: rgba(255,255,255,0.08); padding: 0.15rem 0.4rem; border-radius: 4px;",
-                        "{full_url}"
-                    }
+                    style: "display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.82rem; color: #a5b4fc;",
+                    span { "🌐 URL Assoluto per domini esterni:" }
+                    Code { "{full_url}" }
                 }
+
                 div {
-                    class: "code-snippet",
-                    "{embed_snippet}"
+                    style: "margin: 0.25rem 0;",
+                    Code { "{embed_snippet}" }
                 }
-                div {
-                    style: "font-size: 0.78rem; color: #6ee7b7; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.35rem;",
-                    span { "✓" }
-                    span { "Compatibile Cross-Origin: accessibile liberamente da qualsiasi dominio esterno senza blocchi CORS o X-Frame-Options." }
+
+                Alert {
+                    variant: AlertVariant::Success,
+                    title: Some("Cross-Origin Ready".to_string()),
+                    glow: Some(true),
+                    "Compatibile Cross-Origin: accessibile liberamente da qualsiasi dominio esterno senza blocchi CORS o X-Frame-Options."
                 }
+
                 div {
-                    style: "display: flex; justify-content: flex-end; gap: 0.75rem;",
-                    button {
-                        class: "btn btn-secondary btn-sm",
-                        onclick: move |_| on_close.call(()),
+                    style: "display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;",
+                    Button {
+                        variant: ButtonVariant::Secondary,
+                        size: ButtonSize::Sm,
+                        onclick: move |_| {
+                            let mut s = is_open;
+                            s.set(false);
+                        },
                         "Chiudi"
                     }
-                    button {
-                        class: "btn btn-primary btn-sm",
+                    Button {
+                        variant: ButtonVariant::Primary,
+                        size: ButtonSize::Sm,
+                        glow: Some(true),
+                        left_icon: Some(rsx! { Icon { kind: IconKind::Copy, size: 14 } }),
                         onclick: {
                             let text = snippet_for_copy.clone();
                             move |_| {
                                 let js = format!(r#"navigator.clipboard.writeText({:?});"#, text);
                                 let _ = document::eval(&js);
-                                copied.set(true);
+                                notifications.success("Codice iframe copiato negli appunti!");
                             }
                         },
-                        if copied() { "✅ Copiato!" } else { "📋 Copia Codice Iframe" }
+                        "Copia Codice Iframe"
                     }
                 }
             }

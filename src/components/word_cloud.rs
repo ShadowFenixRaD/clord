@@ -1,5 +1,7 @@
 use crate::model::WordCloudSession;
 use dioxus::prelude::*;
+use shadow_design::alert::{Alert, AlertVariant};
+use shadow_design::badge::{Badge, BadgeVariant};
 
 #[component]
 pub fn WordCloud(
@@ -11,10 +13,13 @@ pub fn WordCloud(
     if placed_words.is_empty() {
         return rsx! {
             div {
-                class: "empty-cloud",
-                div { class: "empty-cloud-icon", "💭" }
-                h3 { "La nuvola è ancora vuota" }
-                p { "Scansiona il QR code o inserisci il codice sul tuo smartphone per iniziare a inviare le prime parole!" }
+                style: "display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; padding: 2rem;",
+                Alert {
+                    variant: AlertVariant::Info,
+                    title: Some("Nuvola in attesa di parole".to_string()),
+                    glow: Some(true),
+                    "Scansiona il QR code o inserisci il codice sul tuo smartphone per iniziare a inviare le prime parole!"
+                }
             }
         };
     }
@@ -36,6 +41,7 @@ pub fn WordCloud(
                             item.font_size_px, item.color_hsl, item.color_hsl, item.x, item.y
                         );
                         let word_to_delete = item.text.clone();
+                        let badge_text = format!("{} ✕", item.count);
 
                         rsx! {
                             span {
@@ -51,8 +57,12 @@ pub fn WordCloud(
                                 },
                                 "{item.text}"
                                 span {
-                                    class: "word-badge",
-                                    "{item.count} ✕"
+                                    class: "word-badge-hover",
+                                    Badge {
+                                        label: badge_text,
+                                        variant: BadgeVariant::Danger,
+                                        pill: true,
+                                    }
                                 }
                             }
                         }

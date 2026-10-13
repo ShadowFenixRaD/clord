@@ -1,0 +1,225 @@
+/* ==============================================================================
+   Clord — Word Cloud Canvas & Geometry Styles
+   All standard UI components (buttons, cards, inputs, navbar, modals, badges,
+   toasts, typography, reset) are provided directly by shadow-design SCSS.
+============================================================================== */
+
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.home-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.5rem;
+    width: 100%;
+}
+
+.home-hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.25rem;
+    max-width: 760px;
+}
+
+.feature-grid-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+    width: 100%;
+}
+
+/* Word Cloud Full-Screen Presentation Layout */
+.wc-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    position: relative;
+}
+
+.wc-layout {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - 60px);
+    position: relative;
+    overflow: hidden;
+}
+
+.wc-cloud-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.wc-sidebar {
+    width: 320px;
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    overflow-y: auto;
+    z-index: 10;
+}
+
+/* Floating Code Banner */
+.floating-code-banner {
+    position: absolute;
+    top: 4.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    padding: 0.5rem 1.25rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    z-index: 30;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Interlocking Organic Word Cloud Stage */
+.word-cloud-stage {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.word-cloud-cluster {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    max-width: 1200px;
+    max-height: 800px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Individual Cloud Words */
+.cloud-word {
+    position: absolute;
+    white-space: nowrap;
+    line-height: 1;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    letter-spacing: -0.015em;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s;
+    transform-origin: center center;
+}
+
+.cloud-word.word-horizontal {
+    transform: translate(-50%, -50%);
+}
+
+.cloud-word.word-vertical {
+    transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+.cloud-word.word-horizontal:hover {
+    transform: translate(-50%, -50%) scale(1.15) !important;
+    z-index: 50;
+    filter: brightness(1.3) drop-shadow(0 0 16px currentColor);
+}
+
+.cloud-word.word-vertical:hover {
+    transform: translate(-50%, -50%) rotate(-90deg) scale(1.15) !important;
+    z-index: 50;
+    filter: brightness(1.3) drop-shadow(0 0 16px currentColor);
+}
+
+.word-badge-hover {
+    position: absolute;
+    top: -12px;
+    right: -10px;
+    opacity: 0;
+    transition: all 0.2s;
+    pointer-events: none;
+}
+
+.cloud-word:hover .word-badge-hover {
+    opacity: 1;
+}
+
+/* QR Code SVG containers */
+.qr-wrapper {
+    background: #ffffff;
+    padding: 0.75rem;
+    border-radius: 12px;
+    display: inline-flex;
+    margin: 0.5rem 0 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.qr-wrapper svg {
+    display: block;
+    width: 170px;
+    height: 170px;
+}
+
+.welcome-qr-wrapper {
+    background: #ffffff;
+    padding: 1.25rem;
+    border-radius: 20px;
+    margin: 1.5rem 0 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    display: inline-flex;
+}
+
+.welcome-qr-wrapper svg {
+    display: block;
+    width: 240px;
+    height: 240px;
+}
+
+.welcome-screen-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+/* Participant Send View */
+.send-container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-height: 100vh;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .wc-layout {
+        flex-direction: column;
+    }
+    .wc-sidebar {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+}

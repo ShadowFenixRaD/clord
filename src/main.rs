@@ -1,4 +1,14 @@
 use dioxus::prelude::*;
+use shadow_design::alert::{Alert, AlertVariant};
+use shadow_design::badge::{Badge, BadgeVariant};
+use shadow_design::button::{Button, ButtonSize, ButtonVariant};
+use shadow_design::card::{Card, CardShadow, CardVariant};
+use shadow_design::icon::{Icon, IconKind, SvgIcon};
+use shadow_design::input::TextInput;
+use shadow_design::navbar::Navbar;
+use shadow_design::notification::{use_notification, NotificationProvider};
+use shadow_design::tabs::{Tab, TabList};
+use shadow_design::typography::{Heading, HeadingOrder, Text, TextSize};
 
 mod backend;
 mod components;
@@ -7,7 +17,7 @@ mod model;
 use components::{EmbedModal, QrCodeView, WordCloud};
 use model::WordCloudSession;
 
-const MAIN_CSS: Asset = asset!("/assets/main.css");
+const CLOUD_CSS: Asset = asset!("/assets/cloud.css");
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -29,51 +39,65 @@ fn App() -> Element {
     rsx! {
         document::Title { "Clord - Nuvola di Parole Interattiva" }
         document::Meta { name: "viewport", content: "width=device-width, initial-scale=1.0" }
-        document::Link { rel: "stylesheet", href: MAIN_CSS }
-        Router::<Route> {}
+        document::Link { rel: "stylesheet", href: shadow_design::STYLES }
+        document::Link { rel: "stylesheet", href: CLOUD_CSS }
+        NotificationProvider {
+            Router::<Route> {}
+        }
     }
 }
 
 /// Home Page
 #[component]
 fn Home() -> Element {
-    let mut input_code = use_signal(String::new);
+    let input_code = use_signal(String::new);
     let mut is_creating = use_signal(|| false);
     let mut err_msg = use_signal(|| None::<String>);
     let nav = navigator();
 
     rsx! {
         div {
-            class: "app-container",
-            header {
-                class: "header-nav",
-                Link {
-                    to: Route::Home {},
-                    class: "brand-link",
-                    span { class: "brand-icon", "☁️" }
-                    span { "Clord" }
-                    span { class: "brand-badge", "Dioxus 0.7" }
-                }
+            class: "app-shell",
+            Navbar {
+                brand: rsx! {
+                    Link {
+                        to: Route::Home {},
+                        style: "display: flex; align-items: center; gap: 0.65rem; text-decoration: none; color: inherit;",
+                        Icon { kind: IconKind::Sparkles, size: 22 }
+                        span { style: "font-weight: 700; font-size: 1.25rem;", "Clord" }
+                        Badge {
+                            label: "Dioxus 0.7".to_string(),
+                            variant: BadgeVariant::Primary,
+                            pill: true,
+                        }
+                    }
+                },
+                div {}
             }
 
             main {
-                class: "home-container",
+                class: "home-wrapper",
                 div {
-                    class: "home-hero",
-                    h1 {
-                        "Nuvole di parole in tempo reale, "
-                        span { class: "text-gradient", "semplici e aperte." }
+                    class: "home-hero-content",
+                    Heading {
+                        order: HeadingOrder::H1,
+                        "Nuvole di parole in tempo reale, semplici e aperte."
                     }
-                    p {
+                    Text {
+                        size: TextSize::Lg,
+                        dimmed: true,
                         "L'alternativa leggera a Mentimeter senza registrazione. "
                         "Crea una sessione con codice numerico da 1 a 8 cifre, condividi il QR code e raccogli risposte dal vivo."
                     }
                     div {
-                        class: "hero-actions",
-                        button {
-                            class: "btn btn-primary btn-pill",
-                            style: "font-size: 1.1rem; padding: 0.85rem 2rem;",
+                        style: "margin-top: 0.5rem;",
+                        Button {
+                            variant: ButtonVariant::Primary,
+                            size: ButtonSize::Lg,
+                            glow: Some(true),
+                            loading: is_creating(),
                             disabled: is_creating(),
+                            left_icon: Some(rsx! { Icon { kind: IconKind::Sparkles, size: 18 } }),
                             onclick: move |_| {
                                 is_creating.set(true);
                                 spawn(async move {
@@ -88,92 +112,138 @@ fn Home() -> Element {
                                     }
                                 });
                             },
-                            if is_creating() { "⏳ Creazione in corso..." } else { "🚀 Crea Nuova Nuvola" }
+                            if is_creating() { "Creazione in corso..." } else { "Crea Nuova Nuvola" }
                         }
                     }
 
                     if let Some(err) = err_msg() {
                         div {
-                            style: "color: #f87171; margin-top: 1rem; font-weight: 600;",
-                            "{err}"
+                            style: "width: 100%; margin-top: 1rem;",
+                            Alert {
+                                variant: AlertVariant::Danger,
+                                title: Some("Errore Creazione".to_string()),
+                                glow: Some(true),
+                                "{err}"
+                            }
                         }
                     }
                 }
 
                 div {
-                    class: "join-card",
-                    h3 { "Partecipa o visualizza una sessione" }
-                    p { "Hai già un codice da 1 a 8 cifre? Inseriscilo qui sotto." }
-                    div {
-                        class: "join-form",
+                    style: "width: 100%; max-width: 480px;",
+                    Card {
+                        title: Some("Partecipa o visualizza una sessione".to_string()),
+                        subtitle: Some("Hai già un codice da 1 a 8 cifre? Inseriscilo qui sotto.".to_string()),
+                        variant: CardVariant::Elevated,
+                        shadow: CardShadow::Lg,
+                        glow: Some(true),
                         div {
-                            class: "code-input-group",
-                            input {
-                                class: "input-code",
-                                placeholder: "Es. 1024",
-                                value: "{input_code}",
-                                maxlength: 8,
-                                oninput: move |e| input_code.set(e.value().trim().to_string()),
+                            style: "display: flex; flex-direction: column; gap: 1rem;",
+                            div {
                                 onkeydown: move |e| {
                                     if e.key() == Key::Enter && !input_code().is_empty() {
                                         nav.push(Route::WordCloudView { code: input_code() });
                                     }
+                                },
+                                TextInput {
+                                    value: input_code,
+                                    placeholder: Some("Es. 1024".to_string()),
+                                    left_icon: Some(SvgIcon::Kind(IconKind::Search)),
+                                    clearable: true,
                                 }
                             }
-                        }
-                        div {
-                            style: "display: flex; gap: 0.75rem; margin-top: 0.25rem;",
-                            button {
-                                class: "btn btn-primary",
-                                style: "flex: 1;",
-                                disabled: input_code().is_empty(),
-                                onclick: move |_| {
-                                    if !input_code().is_empty() {
-                                        nav.push(Route::WordCloudView { code: input_code() });
-                                    }
-                                },
-                                "📊 Mostra Nuvola"
-                            }
-                            button {
-                                class: "btn btn-secondary",
-                                style: "flex: 1;",
-                                disabled: input_code().is_empty(),
-                                onclick: move |_| {
-                                    if !input_code().is_empty() {
-                                        nav.push(Route::SendWordView { code: input_code() });
-                                    }
-                                },
-                                "✏️ Invia Parole"
+                            div {
+                                style: "display: flex; gap: 0.75rem;",
+                                Button {
+                                    variant: ButtonVariant::Primary,
+                                    full_width: true,
+                                    disabled: input_code().is_empty(),
+                                    left_icon: Some(rsx! { Icon { kind: IconKind::Layers, size: 16 } }),
+                                    onclick: move |_| {
+                                        if !input_code().is_empty() {
+                                            nav.push(Route::WordCloudView { code: input_code() });
+                                        }
+                                    },
+                                    "Mostra Nuvola"
+                                }
+                                Button {
+                                    variant: ButtonVariant::Secondary,
+                                    full_width: true,
+                                    disabled: input_code().is_empty(),
+                                    left_icon: Some(rsx! { Icon { kind: IconKind::Terminal, size: 16 } }),
+                                    onclick: move |_| {
+                                        if !input_code().is_empty() {
+                                            nav.push(Route::SendWordView { code: input_code() });
+                                        }
+                                    },
+                                    "Invia Parole"
+                                }
                             }
                         }
                     }
                 }
 
                 div {
-                    class: "feature-grid",
-                    div {
-                        class: "feature-box",
-                        div { class: "feature-icon", "↔️" }
-                        h4 { "Orizzontale & Verticale" }
-                        p { "Le parole vengono posizionate armonicamente in entrambe le direzioni senza fastidiosi scatti." }
+                    class: "feature-grid-layout",
+                    Card {
+                        variant: CardVariant::Interactive,
+                        shadow: CardShadow::Sm,
+                        hover_glow: true,
+                        title: Some("Orizzontale & Verticale".to_string()),
+                        div {
+                            style: "display: flex; flex-direction: column; gap: 0.5rem;",
+                            div { Icon { kind: IconKind::Box, size: 24 } }
+                            Text {
+                                size: TextSize::Sm,
+                                dimmed: true,
+                                "Le parole vengono posizionate armonicamente in entrambe le direzioni senza fastidiosi scatti."
+                            }
+                        }
                     }
-                    div {
-                        class: "feature-box",
-                        div { class: "feature-icon", "📱" }
-                        h4 { "QR Code Istantaneo" }
-                        p { "I partecipanti inquadrano il codice QR e inviano le loro risposte all'istante dallo smartphone." }
+                    Card {
+                        variant: CardVariant::Interactive,
+                        shadow: CardShadow::Sm,
+                        hover_glow: true,
+                        title: Some("QR Code Istantaneo".to_string()),
+                        div {
+                            style: "display: flex; flex-direction: column; gap: 0.5rem;",
+                            div { Icon { kind: IconKind::Sparkles, size: 24 } }
+                            Text {
+                                size: TextSize::Sm,
+                                dimmed: true,
+                                "I partecipanti inquadrano il codice QR e inviano le loro risposte all'istante dallo smartphone."
+                            }
+                        }
                     }
-                    div {
-                        class: "feature-box",
-                        div { class: "feature-icon", "🖼️" }
-                        h4 { "Pronto per Iframe" }
-                        p { "Includi facilmente la nuvola in qualsiasi sito esterno, slide interattiva o Notion con 1 riga." }
+                    Card {
+                        variant: CardVariant::Interactive,
+                        shadow: CardShadow::Sm,
+                        hover_glow: true,
+                        title: Some("Pronto per Iframe".to_string()),
+                        div {
+                            style: "display: flex; flex-direction: column; gap: 0.5rem;",
+                            div { Icon { kind: IconKind::Code, size: 24 } }
+                            Text {
+                                size: TextSize::Sm,
+                                dimmed: true,
+                                "Includi facilmente la nuvola in qualsiasi sito esterno, slide interattiva o Notion con 1 riga."
+                            }
+                        }
                     }
-                    div {
-                        class: "feature-box",
-                        div { class: "feature-icon", "🔄" }
-                        h4 { "Rotazione & Reset Rapido" }
-                        p { "Salvataggio locale con riciclo automatico delle sessioni più vecchie e reset immediato." }
+                    Card {
+                        variant: CardVariant::Interactive,
+                        shadow: CardShadow::Sm,
+                        hover_glow: true,
+                        title: Some("Rotazione & Reset Rapido".to_string()),
+                        div {
+                            style: "display: flex; flex-direction: column; gap: 0.5rem;",
+                            div { Icon { kind: IconKind::Settings, size: 24 } }
+                            Text {
+                                size: TextSize::Sm,
+                                dimmed: true,
+                                "Salvataggio locale con riciclo automatico delle sessioni più vecchie e reset immediato."
+                            }
+                        }
                     }
                 }
             }
@@ -181,22 +251,15 @@ fn Home() -> Element {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
-enum ViewMode {
-    CloudOnly,
-    Split,
-    Welcome,
-}
-
 /// Word Cloud Presentation View (/wc/:code)
 #[component]
 fn WordCloudView(code: String) -> Element {
     let mut cloud_data = use_signal(|| None::<WordCloudSession>);
     let mut send_url = use_signal(|| format!("/wc/{}/send", code));
-    let mut view_mode = use_signal(|| ViewMode::Split);
+    let mut active_tab = use_signal(|| "split".to_string());
     let mut hide_code = use_signal(|| false);
     let mut show_embed = use_signal(|| false);
-    let mut copied_link = use_signal(|| false);
+    let mut notifications = use_notification();
 
     // Initial load and periodic polling
     {
@@ -241,74 +304,81 @@ fn WordCloudView(code: String) -> Element {
     rsx! {
         div {
             class: "wc-screen",
-            // Header / Controls Toolbar
-            div {
-                class: "wc-toolbar",
-                div {
-                    style: "display: flex; align-items: center; gap: 1rem;",
-                    Link {
-                        to: Route::Home {},
-                        class: "brand-link",
-                        style: "font-size: 1.15rem;",
-                        span { class: "brand-icon", "☁️" }
-                        span { "Clord" }
-                    }
-                    // 3 Views Selector
+            Navbar {
+                brand: rsx! {
                     div {
-                        class: "view-selector",
-                        button {
-                            class: if view_mode() == ViewMode::CloudOnly { "view-btn active" } else { "view-btn" },
-                            onclick: move |_| view_mode.set(ViewMode::CloudOnly),
-                            "☁️ Nuvola"
+                        style: "display: flex; align-items: center; gap: 1rem;",
+                        Link {
+                            to: Route::Home {},
+                            style: "display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: inherit;",
+                            Icon { kind: IconKind::Sparkles, size: 20 }
+                            span { style: "font-weight: 700; font-size: 1.15rem;", "Clord" }
                         }
-                        button {
-                            class: if view_mode() == ViewMode::Split { "view-btn active" } else { "view-btn" },
-                            onclick: move |_| view_mode.set(ViewMode::Split),
-                            "📊 Nuvola + QR"
-                        }
-                        button {
-                            class: if view_mode() == ViewMode::Welcome { "view-btn active" } else { "view-btn" },
-                            onclick: move |_| view_mode.set(ViewMode::Welcome),
-                            "📱 Codice + QR"
+                        TabList {
+                            Tab {
+                                value: "cloud".to_string(),
+                                active: active_tab,
+                                icon: Some(IconKind::Sparkles),
+                                "Nuvola"
+                            }
+                            Tab {
+                                value: "split".to_string(),
+                                active: active_tab,
+                                icon: Some(IconKind::Layers),
+                                "Nuvola + QR"
+                            }
+                            Tab {
+                                value: "welcome".to_string(),
+                                active: active_tab,
+                                icon: Some(IconKind::Box),
+                                "Codice + QR"
+                            }
                         }
                     }
-                }
-
+                },
                 div {
-                    class: "toolbar-actions",
-                    // Hide/Show code button only in CloudOnly mode
-                    if view_mode() == ViewMode::CloudOnly {
-                        button {
-                            class: "btn btn-secondary btn-sm",
+                    style: "display: flex; align-items: center; gap: 0.5rem;",
+                    if active_tab() == "cloud" {
+                        Button {
+                            variant: ButtonVariant::Secondary,
+                            size: ButtonSize::Sm,
+                            left_icon: Some(rsx! {
+                                Icon {
+                                    kind: if hide_code() { IconKind::Eye } else { IconKind::EyeOff },
+                                    size: 14,
+                                }
+                            }),
                             onclick: move |_| hide_code.set(!hide_code()),
-                            if hide_code() { "👁️ Mostra Codice" } else { "🙈 Nascondi Codice" }
+                            if hide_code() { "Mostra Codice" } else { "Nascondi Codice" }
                         }
                     }
 
-                    // Copy participant link
-                    button {
-                        class: "btn btn-secondary btn-sm",
+                    Button {
+                        variant: ButtonVariant::Secondary,
+                        size: ButtonSize::Sm,
+                        left_icon: Some(rsx! { Icon { kind: IconKind::Copy, size: 14 } }),
                         onclick: {
                             let url = send_url();
                             move |_| {
                                 let js = format!(r#"navigator.clipboard.writeText({:?});"#, url);
                                 let _ = document::eval(&js);
-                                copied_link.set(true);
+                                notifications.success("Link partecipanti copiato negli appunti!");
                             }
                         },
-                        if copied_link() { "✅ Copiato!" } else { "🔗 Copia Link" }
+                        "Copia Link"
                     }
 
-                    // Embed iframe button
-                    button {
-                        class: "btn btn-secondary btn-sm",
+                    Button {
+                        variant: ButtonVariant::Secondary,
+                        size: ButtonSize::Sm,
+                        left_icon: Some(rsx! { Icon { kind: IconKind::Code, size: 14 } }),
                         onclick: move |_| show_embed.set(true),
-                        "🖼️ Iframe"
+                        "Iframe"
                     }
 
-                    // Export SVG
-                    button {
-                        class: "btn btn-secondary btn-sm",
+                    Button {
+                        variant: ButtonVariant::Secondary,
+                        size: ButtonSize::Sm,
                         onclick: {
                             let svg_data = current_session.generate_svg(1600, 1000);
                             let code = code.clone();
@@ -327,12 +397,12 @@ fn WordCloudView(code: String) -> Element {
                                 let _ = document::eval(&js);
                             }
                         },
-                        "🎨 SVG"
+                        "SVG"
                     }
 
-                    // Export PNG
-                    button {
-                        class: "btn btn-secondary btn-sm",
+                    Button {
+                        variant: ButtonVariant::Secondary,
+                        size: ButtonSize::Sm,
                         onclick: {
                             let svg_data = current_session.generate_svg(1600, 1000);
                             let code = code.clone();
@@ -359,31 +429,34 @@ fn WordCloudView(code: String) -> Element {
                                 let _ = document::eval(&js);
                             }
                         },
-                        "📸 PNG"
+                        "PNG"
                     }
                 }
             }
 
-            // Floating code banner if in Solo Nuvola mode and code is NOT hidden
-            if view_mode() == ViewMode::CloudOnly && !hide_code() {
+            if active_tab() == "cloud" && !hide_code() {
                 div {
                     class: "floating-code-banner",
-                    span { "Codice di accesso:" }
-                    span { class: "code-highlight", "#{code}" }
-                    button {
-                        class: "btn btn-secondary btn-sm btn-pill",
-                        style: "padding: 0.2rem 0.55rem; font-size: 0.75rem;",
+                    span { style: "font-size: 0.85rem; color: #a1a1aa;", "Codice di accesso:" }
+                    Badge {
+                        label: format!("#{code}"),
+                        variant: BadgeVariant::Primary,
+                        pill: true,
+                        glow: Some(true),
+                    }
+                    Button {
+                        variant: ButtonVariant::Ghost,
+                        size: ButtonSize::Sm,
                         onclick: move |_| hide_code.set(true),
                         "Nascondi"
                     }
                 }
             }
 
-            // Main Content Area based on View Mode
             div {
                 class: "wc-layout",
-                match view_mode() {
-                    ViewMode::CloudOnly => rsx! {
+                match active_tab().as_str() {
+                    "cloud" => rsx! {
                         div {
                             class: "wc-cloud-area",
                             WordCloud {
@@ -406,7 +479,7 @@ fn WordCloudView(code: String) -> Element {
                             }
                         }
                     },
-                    ViewMode::Split => rsx! {
+                    "split" => rsx! {
                         div {
                             class: "wc-cloud-area",
                             WordCloud {
@@ -430,71 +503,107 @@ fn WordCloudView(code: String) -> Element {
                         }
                         aside {
                             class: "wc-sidebar",
-                            div {
-                                class: "sidebar-card",
-                                div { class: "sidebar-code-label", "Codice sessione" }
-                                div { class: "sidebar-code-val", "#{code}" }
-                                QrCodeView { url: send_url(), class: Some("qr-wrapper".to_string()) }
-                                p {
-                                    style: "font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;",
-                                    "Inquadra con il telefono per inviare le tue parole"
-                                }
-                                a {
-                                    class: "btn btn-primary btn-sm",
-                                    style: "width: 100%;",
-                                    href: "{send_url}",
-                                    target: "_blank",
-                                    "✏️ Apri pagina invio ↗"
+                            Card {
+                                variant: CardVariant::Elevated,
+                                shadow: CardShadow::Md,
+                                title: Some("Sessione dal Vivo".to_string()),
+                                div {
+                                    style: "display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.75rem;",
+                                    Badge {
+                                        label: format!("#{code}"),
+                                        variant: BadgeVariant::Primary,
+                                        pill: true,
+                                        glow: Some(true),
+                                    }
+                                    QrCodeView { url: send_url(), class: Some("qr-wrapper".to_string()) }
+                                    Text {
+                                        size: TextSize::Sm,
+                                        dimmed: true,
+                                        "Inquadra con il telefono per inviare le tue parole"
+                                    }
+                                    Button {
+                                        variant: ButtonVariant::Primary,
+                                        size: ButtonSize::Sm,
+                                        full_width: true,
+                                        left_icon: Some(rsx! { Icon { kind: IconKind::ExternalLink, size: 14 } }),
+                                        onclick: {
+                                            let url = send_url();
+                                            move |_| {
+                                                let js = format!(r#"window.open({:?}, '_blank');"#, url);
+                                                let _ = document::eval(&js);
+                                            }
+                                        },
+                                        "Apri Pagina Invio"
+                                    }
                                 }
                             }
                             div {
-                                class: "sidebar-stats",
-                                div {
-                                    class: "stat-item",
-                                    div { class: "stat-val", "{total_words}" }
-                                    div { class: "stat-lbl", "Parole Totali" }
+                                style: "display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;",
+                                Card {
+                                    variant: CardVariant::Metric,
+                                    title: Some("Totali".to_string()),
+                                    div {
+                                        style: "text-align: center; padding: 0.25rem 0;",
+                                        Heading { order: HeadingOrder::H3, "{total_words}" }
+                                    }
                                 }
-                                div {
-                                    class: "stat-item",
-                                    div { class: "stat-val", "{unique_words}" }
-                                    div { class: "stat-lbl", "Parole Distinte" }
+                                Card {
+                                    variant: CardVariant::Metric,
+                                    title: Some("Distinte".to_string()),
+                                    div {
+                                        style: "text-align: center; padding: 0.25rem 0;",
+                                        Heading { order: HeadingOrder::H3, "{unique_words}" }
+                                    }
                                 }
                             }
                         }
                     },
-                    ViewMode::Welcome => rsx! {
+                    "welcome" => rsx! {
                         div {
-                            class: "welcome-screen",
-                            div {
-                                class: "welcome-card",
-                                h2 {
-                                    style: "font-size: 2rem; font-weight: 800;",
-                                    "Unisciti alla sessione dal vivo"
-                                }
-                                p {
-                                    style: "font-size: 1.15rem; color: var(--text-muted); margin-top: 0.25rem;",
-                                    "Scansiona il codice QR o collegati inserendo il codice:"
-                                }
-                                div { class: "welcome-code-hero", "#{code}" }
-                                QrCodeView { url: send_url(), class: Some("welcome-qr-wrapper".to_string()) }
-                                button {
-                                    class: "btn btn-primary btn-pill",
-                                    style: "font-size: 1.1rem; padding: 0.75rem 2rem;",
-                                    onclick: move |_| view_mode.set(ViewMode::Split),
-                                    "🚀 Mostra Nuvola di Parole"
+                            class: "welcome-screen-container",
+                            Card {
+                                variant: CardVariant::Elevated,
+                                shadow: CardShadow::Xl,
+                                glow: Some(true),
+                                div {
+                                    style: "display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem; padding: 1.5rem 2rem;",
+                                    Heading { order: HeadingOrder::H2, "Unisciti alla sessione dal vivo" }
+                                    Text {
+                                        size: TextSize::Lg,
+                                        dimmed: true,
+                                        "Scansiona il codice QR o collegati inserendo il codice:"
+                                    }
+                                    div {
+                                        style: "margin: 0.5rem 0;",
+                                        Badge {
+                                            label: format!("#{code}"),
+                                            variant: BadgeVariant::Primary,
+                                            pill: true,
+                                            glow: Some(true),
+                                        }
+                                    }
+                                    QrCodeView { url: send_url(), class: Some("welcome-qr-wrapper".to_string()) }
+                                    Button {
+                                        variant: ButtonVariant::Primary,
+                                        size: ButtonSize::Lg,
+                                        glow: Some(true),
+                                        left_icon: Some(rsx! { Icon { kind: IconKind::Sparkles, size: 18 } }),
+                                        onclick: move |_| active_tab.set("split".to_string()),
+                                        "Mostra Nuvola di Parole"
+                                    }
                                 }
                             }
                         }
-                    }
+                    },
+                    _ => rsx! {},
                 }
             }
 
-            // Embed Iframe Modal
             if show_embed() {
                 EmbedModal {
                     code: code.clone(),
                     origin: Some(site_origin()),
-                    on_close: move |_| show_embed.set(false)
+                    is_open: show_embed,
                 }
             }
         }
@@ -506,107 +615,143 @@ fn WordCloudView(code: String) -> Element {
 fn SendWordView(code: String) -> Element {
     let mut word_input = use_signal(String::new);
     let mut sent_words = use_signal(Vec::<String>::new);
-    let mut feedback_msg = use_signal(|| None::<String>);
     let mut is_submitting = use_signal(|| false);
+    let mut notifications = use_notification();
+    let nav = navigator();
 
     rsx! {
         div {
-            class: "send-container",
-            header {
-                class: "send-header",
-                Link {
-                    to: Route::Home {},
-                    class: "brand-link",
-                    style: "justify-content: center; margin-bottom: 0.5rem;",
-                    span { class: "brand-icon", "☁️" }
-                    span { "Clord" }
-                }
-                h2 { "Invia la tua parola" }
-                div {
-                    class: "send-code-pill",
-                    "Sessione #{code}"
-                }
+            class: "app-shell",
+            Navbar {
+                brand: rsx! {
+                    Link {
+                        to: Route::Home {},
+                        style: "display: flex; align-items: center; gap: 0.65rem; text-decoration: none; color: inherit;",
+                        Icon { kind: IconKind::Sparkles, size: 20 }
+                        span { style: "font-weight: 700; font-size: 1.15rem;", "Clord" }
+                        Badge {
+                            label: format!("Sessione #{code}"),
+                            variant: BadgeVariant::Primary,
+                            pill: true,
+                        }
+                    }
+                },
+                div {}
             }
 
             div {
-                class: "send-form-card",
-                form {
-                    onsubmit: {
-                        let code = code.clone();
-                        move |e| {
-                            e.stop_propagation();
-                            let w = word_input().trim().to_string();
-                            if !w.is_empty() && !is_submitting() {
-                                is_submitting.set(true);
-                                let c = code.clone();
-                                spawn(async move {
-                                    match backend::submit_word(c, w.clone()).await {
-                                        Ok(()) => {
-                                            feedback_msg.set(Some(format!("✅ '{}' inviata con successo!", w)));
-                                            sent_words.write().push(w);
-                                            word_input.set(String::new());
+                class: "send-container",
+                Card {
+                    title: Some("Invia la tua parola".to_string()),
+                    subtitle: Some("Partecipa in tempo reale alla nuvola di parole condivisa.".to_string()),
+                    variant: CardVariant::Elevated,
+                    shadow: CardShadow::Lg,
+                    glow: Some(true),
+                    form {
+                        onsubmit: {
+                            let code = code.clone();
+                            move |e| {
+                                e.stop_propagation();
+                                let w = word_input().trim().to_string();
+                                if !w.is_empty() && !is_submitting() {
+                                    is_submitting.set(true);
+                                    let c = code.clone();
+                                    spawn(async move {
+                                        match backend::submit_word(c, w.clone()).await {
+                                            Ok(()) => {
+                                                notifications.success(format!("'{}' inviata con successo!", w));
+                                                sent_words.write().push(w);
+                                                word_input.set(String::new());
+                                            }
+                                            Err(err) => {
+                                                notifications.danger(format!("Errore: {}", err));
+                                            }
                                         }
-                                        Err(err) => {
-                                            feedback_msg.set(Some(format!("⚠️ Errore: {}", err)));
+                                        is_submitting.set(false);
+                                    });
+                                }
+                            }
+                        },
+                        div {
+                            style: "display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;",
+                            TextInput {
+                                value: word_input,
+                                placeholder: Some("Scrivi qui una parola...".to_string()),
+                                clearable: true,
+                                disabled: is_submitting(),
+                            }
+                            Button {
+                                variant: ButtonVariant::Primary,
+                                size: ButtonSize::Md,
+                                full_width: true,
+                                loading: is_submitting(),
+                                disabled: word_input().trim().is_empty() || is_submitting(),
+                                left_icon: Some(rsx! { Icon { kind: IconKind::Sparkles, size: 16 } }),
+                                onclick: {
+                                    let code = code.clone();
+                                    move |_| {
+                                        let w = word_input().trim().to_string();
+                                        if !w.is_empty() && !is_submitting() {
+                                            is_submitting.set(true);
+                                            let c = code.clone();
+                                            spawn(async move {
+                                                match backend::submit_word(c, w.clone()).await {
+                                                    Ok(()) => {
+                                                        notifications.success(format!("'{}' inviata con successo!", w));
+                                                        sent_words.write().push(w);
+                                                        word_input.set(String::new());
+                                                    }
+                                                    Err(err) => {
+                                                        notifications.danger(format!("Errore: {}", err));
+                                                    }
+                                                }
+                                                is_submitting.set(false);
+                                            });
                                         }
                                     }
-                                    is_submitting.set(false);
-                                });
+                                },
+                                if is_submitting() { "Invio in corso..." } else { "Invia Parola 🚀" }
                             }
                         }
-                    },
-                    div {
-                        style: "display: flex; flex-direction: column; gap: 0.85rem;",
-                        input {
-                            class: "input-word",
-                            placeholder: "Scrivi qui una parola...",
-                            value: "{word_input}",
-                            maxlength: 35,
-                            autofocus: true,
-                            disabled: is_submitting(),
-                            oninput: move |e| word_input.set(e.value()),
-                        }
-                        button {
-                            class: "btn btn-primary",
-                            r#type: "submit",
-                            disabled: word_input().trim().is_empty() || is_submitting(),
-                            style: "width: 100%; padding: 0.85rem; font-size: 1.05rem;",
-                            if is_submitting() { "Invio in corso..." } else { "Invia Parola 🚀" }
-                        }
                     }
-                }
 
-                if let Some(msg) = feedback_msg() {
-                    div {
-                        class: "toast-feedback",
-                        "{msg}"
-                    }
-                }
-
-                if !sent_words().is_empty() {
-                    div {
-                        class: "sent-history",
-                        div { class: "sent-history-title", "Le tue parole inviate:" }
+                    if !sent_words().is_empty() {
                         div {
-                            class: "sent-chips",
-                            for (i, word) in sent_words().iter().enumerate() {
-                                span {
-                                    key: "{i}-{word}",
-                                    class: "sent-chip",
-                                    "{word}"
+                            style: "margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 1rem;",
+                            Text {
+                                size: TextSize::Sm,
+                                dimmed: true,
+                                "Le tue parole inviate:"
+                            }
+                            div {
+                                style: "display: flex; flex-wrap: wrap; gap: 0.5rem;",
+                                for (i, word) in sent_words().iter().enumerate() {
+                                    Badge {
+                                        key: "{i}-{word}",
+                                        label: word.clone(),
+                                        variant: BadgeVariant::Outline,
+                                        pill: true,
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                div {
-                    style: "margin-top: 1rem; text-align: center; border-top: 1px solid var(--border-color); padding-top: 1rem;",
-                    Link {
-                        to: Route::WordCloudView { code: code.clone() },
-                        class: "btn btn-secondary btn-sm",
-                        style: "width: 100%;",
-                        "👀 Guarda la nuvola in diretta ↗"
+                    div {
+                        style: "margin-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 1rem;",
+                        Button {
+                            variant: ButtonVariant::Secondary,
+                            size: ButtonSize::Sm,
+                            full_width: true,
+                            left_icon: Some(rsx! { Icon { kind: IconKind::ExternalLink, size: 14 } }),
+                            onclick: {
+                                let c = code.clone();
+                                move |_| {
+                                    nav.push(Route::WordCloudView { code: c.clone() });
+                                }
+                            },
+                            "Guarda la nuvola in diretta"
+                        }
                     }
                 }
             }
