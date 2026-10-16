@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build and push with Kaniko
-        uses: aevea/action-kaniko@master
+        uses: https://github.com/aevea/action-kaniko@master
         with:
           registry: ${{ env.REGISTRY }}
           image: ${{ env.IMAGE_NAME }}
