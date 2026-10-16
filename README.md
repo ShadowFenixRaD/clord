@@ -25,4 +25,47 @@ To run for a different platform, use the `--platform platform` flag. E.g.
 dx serve --platform desktop
 ```
 
+## Docker & Deployment
+
+Il progetto include la configurazione Docker e Docker Compose ottimizzata secondo la [guida ufficiale Dioxus 0.7](https://dioxuslabs.com/learn/0.7/tutorial/deploy), utilizzando `cargo-chef` per il caching delle dipendenze.
+
+### Avvio rapido con Docker Compose
+
+Sul server o macchina remota con Docker:
+
+```bash
+docker compose up -d --build
+```
+
+L'app sarà raggiungibile all'indirizzo `http://<host-ip>:8080`.
+
+I dati delle sessioni word cloud vengono salvati in `./data/wordclouds.json` e persistiti tramite il volume montato `./data`.
+
+### Aggiornamento dell'applicazione
+
+Per aggiornare l'applicazione dopo nuove modifiche al codice:
+
+```bash
+# Tramite lo script dedicato:
+./deploy.sh
+
+# Oppure manualmente:
+git pull
+docker compose up -d --build
+```
+
+### Comandi utili
+
+```bash
+# Visualizzare i log in tempo reale
+docker compose logs -f
+
+# Riavviare il servizio
+docker compose restart
+
+# Arrestare il container
+docker compose down
+```
+
+
 

@@ -1,0 +1,16 @@
+services:
+  clord:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: clord:latest
+    container_name: clord
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - PORT=8080
+      - IP=0.0.0.0
+    volumes:
+      # Persistenza dati word cloud (wordclouds.json) su disco host
+      - ./data:/usr/local/app/data
