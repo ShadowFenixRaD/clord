@@ -67,5 +67,17 @@ docker compose restart
 docker compose down
 ```
 
+### CI/CD e Forgejo Packages
+
+Il file [`.forgejo/workflows/docker-publish.yml`](.forgejo/workflows/docker-publish.yml) compila automaticamente l'immagine e la pubblica nel Container Registry di Forgejo (`source.shadowfenix.net/development/clord`).
+
+- **Trigger**: solo alla pubblicazione di una **Release** (o creazione di tag di versione es. `0.1.0` / `v0.1.0`), oppure su avvio manuale (`workflow_dispatch`). I normali commit su `main` non creano l'immagine.
+- **Autenticazione**: utilizza automaticamente `${{ github.actor }}` e `${{ secrets.CR_PAT || secrets.FORGEJO_TOKEN || secrets.GITHUB_TOKEN }}`.
+  - *Nota*: se `GITHUB_TOKEN` della tua istanza Forgejo non dispone dei permessi di scrittura sui Packages, crea un Personal Access Token (scope `write:package`) in *Impostazioni Utente -> Applicazioni* e aggiungilo nei Secrets della repo come `CR_PAT`.
+- **Download diretto dell'immagine**:
+  ```bash
+  docker pull source.shadowfenix.net/development/clord:latest
+  ```
+
 
 

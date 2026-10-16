@@ -36,6 +36,9 @@ RUN dx bundle --web --release
 # Fase 4: Runtime minimale Debian Bookworm Slim
 FROM debian:bookworm-slim AS runtime
 
+# Collega automaticamente l'immagine al repository Forgejo Packages
+LABEL org.opencontainers.image.source="https://source.shadowfenix.net/development/clord"
+
 # Installa i certificati CA necessari per eventuali chiamate HTTPS in uscita
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates && \

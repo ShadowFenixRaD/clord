@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: clord:latest
+    image: source.shadowfenix.net/development/clord:latest
     container_name: clord
     restart: unless-stopped
     ports:
